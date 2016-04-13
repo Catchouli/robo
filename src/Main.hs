@@ -2,6 +2,7 @@ module Main where
 
 import IRC
 import Network
+import Text.ParserCombinators.Parsec
 
 config :: IRCConfig
 config = defaultConfig
@@ -15,11 +16,14 @@ config = defaultConfig
 
 onConnect :: IRCConnection -> IO ()
 onConnect conn = do
-  sendCommand conn "JOIN #test"
+  sendCommand conn "JOIN #rena"
 
 onMessage :: IRCConnection -> String -> String -> String -> IO ()
 onMessage conn chan nick msg = do
-  sendMessage conn chan $ "hello " ++ nick
+  let mynick = _nick . _config $ conn
+  case parse (string $ "hello " ++ mynick) "" msg of
+    Right _    -> sendMessage conn chan $ "hello " ++ nick
+    _          -> return ()
 
 main :: IO ()
 main = do

@@ -4,7 +4,7 @@ module IRC
   , Channel
   , Message
   , defaultConfig
-  , IRCConnection
+  , IRCConnection (..)
   , newConnection
   , process
   , sendCommand
@@ -17,7 +17,6 @@ import System.IO
 import Text.Printf
 import Control.Concurrent
 import IRC.Parser
-import qualified Data.ByteString.Char8 as BS
 
 data IRCConfig = IRCConfig
   { _hostname :: String
@@ -64,15 +63,17 @@ process conn = do
 
 processCommand :: IRCConnection -> String -> IO ()
 processCommand conn s = do
-  case parseMessage $ BS.pack s of
-    Just Welcome -> printf "got welcome message"
-    _            -> printf "no parse for message"
+  case parseMessage s of
+    Right (Welcome host msg)                 -> (_onConnect . _config $ conn) conn
+    Right (Ping host)                        -> sendCommand conn $ "PONG :" ++ host
+    Right (Message chan (User nick _ _) msg) -> (_onMessage . _config $ conn) conn chan nick msg
+    _                                        -> printf "no parse for message\r\n"
   return ()
 
 sendCommand :: IRCConnection -> String -> IO ()
 sendCommand conn command = do
   hPrintf (_handle conn) "%s\r\n" command
-  printf "%s\r\n" command
+  printf "-> %s\r\n" command
 
 sendMessage :: IRCConnection -> Channel -> Message -> IO ()
 sendMessage conn channel message = do
