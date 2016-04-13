@@ -1,28 +1,27 @@
 module Main where
 
+import IRC
 import Network
-import System.IO
-import Text.Printf
 
-server = "192.168.0.77"
-port = 6667 :: Num a => a
-chan = "#test"
-nick = "robo"
+config :: IRCConfig
+config = defaultConfig
+  --{ _hostname = "192.168.0.77"
+  { _hostname = "uiharu.cat.bio"
+  , _port = PortNumber 6667
+  , _nick = "robo"
+  , _onConnect = onConnect
+  , _onMessage = onMessage
+  }
+
+onConnect :: IRCConnection -> IO ()
+onConnect conn = do
+  sendCommand conn "JOIN #test"
+
+onMessage :: IRCConnection -> String -> String -> String -> IO ()
+onMessage conn chan nick msg = do
+  sendMessage conn chan $ "hello " ++ nick
 
 main :: IO ()
 main = do
-  h <- connectTo server (PortNumber port)
-  hSetBuffering h NoBuffering
-  write h "NICK robo\r\n"
-  write h "USER robo 0 * :robo\r\n"
-  write h "JOIN #test\r\n"
-  let loop = do
-      s <- hGetLine h
-      putStrLn s
-      loop
-  loop
-
-write :: Handle -> String -> IO ()
-write h s = do
-  hPrintf h "%s" s 
-  printf "%s" s
+  conn <- newConnection config
+  process conn
