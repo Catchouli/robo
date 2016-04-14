@@ -20,3 +20,5 @@ executable robo
                      , network
                      , parsec
                      , bytestring
+                     , http-conduit
+                     , connection

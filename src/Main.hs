@@ -2,6 +2,7 @@ module Main where
 
 import IRC
 import Network
+import Control.Concurrent
 import Text.ParserCombinators.Parsec
 
 config :: IRCConfig
@@ -28,4 +29,10 @@ onMessage conn chan nick msg = do
 main :: IO ()
 main = do
   conn <- newConnection config
-  process conn
+  forkIO $ process conn
+  let loop = do
+        a <- getLine
+        sendMessage conn "#rena" a
+        loop
+  loop
+  sendCommand conn "QUIT"
