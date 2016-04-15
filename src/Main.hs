@@ -3,6 +3,7 @@ module Main where
 import IRC
 import MissileLauncher
 import Network
+import Control.Concurrent
 import Text.ParserCombinators.Parsec
 import Control.Concurrent
 
@@ -57,5 +58,3 @@ main = do
   --cmdMissileLauncher launcher MoveLeft False (Just 1000000)
 
   takeMVar botExited
-
-  return ()

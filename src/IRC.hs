@@ -78,3 +78,6 @@ sendCommand conn command = do
 sendMessage :: IRCConnection -> Channel -> Message -> IO ()
 sendMessage conn channel message = do
   sendCommand conn $ "PRIVMSG " ++ channel ++ " :" ++ message
+
+sendAction :: IRCConnection -> Channel -> Message -> IO ()
+sendAction conn channel message = sendMessage conn channel $ "\1ACTION " ++ message ++ "\1"
