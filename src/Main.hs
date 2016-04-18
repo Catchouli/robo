@@ -9,10 +9,11 @@ import Control.Concurrent
 
 config :: IRCConfig
 config = defaultConfig
-  --{ _hostname = "192.168.0.77"
-  { _hostname = "uiharu.cat.bio"
+  { _hostname = "192.168.0.77"
+  --{ _hostname = "uiharu.cat.bio"
   , _port = PortNumber 6667
   , _nick = "robo"
+  , _backup = "robo2"
   , _onConnect = onConnect
   , _onMessage = onMessage
   }
@@ -20,7 +21,7 @@ config = defaultConfig
 
 onConnect :: IRCConnection -> IO ()
 onConnect conn = do
-  sendCommand conn "JOIN #rena"
+  sendCommand conn "JOIN #test"
 
 
 moveCmd "up"    = MoveUp
@@ -40,7 +41,7 @@ onMessage conn chan nick msg = do
   let mynick = _nick . _config $ conn
   case parse ((string $ mynick ++ " ") >> (string "left" <|> string "right" <|> string "up" <|> string "down" <|> string "fire")) "" msg of
     Right cmd  -> simpleMissile (moveCmd cmd) (cmd == "fire")
-    Left err   -> print err
+    Left err   -> return () --print err
 
 
 bot :: IO ()
@@ -54,7 +55,7 @@ main = do
   botExited <- newEmptyMVar :: IO (MVar ())
   forkFinally bot (\_ -> putMVar botExited ())
   
-  --launcher <- newMissileLauncher False
-  --cmdMissileLauncher launcher MoveLeft False (Just 1000000)
+  --launcher <- newMissileLauncher True
+  --cmdMissileLauncher launcher MoveNone True Nothing--(Just 1000000)
 
   takeMVar botExited
