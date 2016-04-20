@@ -7,11 +7,19 @@ import Control.Concurrent
 import Text.ParserCombinators.Parsec
 import Control.Concurrent
 
+import Control.Monad.State
+import Control.Monad.Reader
+import Control.Monad.Writer
+import Control.Exception
+
+import Data.Typeable
+
+import Data.IORef
+
 config :: IRCConfig
 config = defaultConfig
   --{ _hostname = "192.168.0.77"
   { _hostname = "uiharu.cat.bio"
-  , _port = PortNumber 6667
   , _nick = "robo"
   , _onConnect = onConnect
   , _onMessage = onMessage
@@ -30,17 +38,30 @@ moveCmd "right" = MoveRight
 moveCmd _       = MoveNone
 
 
-simpleMissile moveCommand fire = do
+simpleMissile moveCommand fire time = do
   launcher <- newMissileLauncher False
-  cmdMissileLauncher launcher moveCommand fire Nothing
+  cmdMissileLauncher launcher moveCommand fire time
+
+
+ifRight :: Monad m => Either a b -> (b -> m ()) -> m ()
+ifRight (Left _) _ = return ()
+ifRight (Right b) f = f b
 
 
 onMessage :: IRCConnection -> String -> String -> String -> IO ()
 onMessage conn chan nick msg = do
   let mynick = _nick . _config $ conn
-  case parse ((string $ mynick ++ " ") >> (string "left" <|> string "right" <|> string "up" <|> string "down" <|> string "fire")) "" msg of
-    Right cmd  -> simpleMissile (moveCmd cmd) (cmd == "fire")
-    Left err   -> print err
+
+  -- Handle missile actions
+  let action = choice $ string <$> ["left", "right", "up", "down", "fire"]
+      parser = do
+        string mynick >> space
+        command <- action
+        space
+        time <- optionMaybe . many1 $ digit
+        return (command, read <$> time)
+      result (action, time) = simpleMissile (moveCmd action) (action == "fire") time
+    in ifRight (parse parser "" msg) result
 
 
 bot :: IO ()
@@ -51,10 +72,12 @@ bot = do
 
 main :: IO ()
 main = do
-  botExited <- newEmptyMVar :: IO (MVar ())
-  forkFinally bot (\_ -> putMVar botExited ())
+  --botExited <- newEmptyMVar :: IO (MVar ())
+  --forkFinally bot (\_ -> putMVar botExited ())
   
   --launcher <- newMissileLauncher False
   --cmdMissileLauncher launcher MoveLeft False (Just 1000000)
 
-  takeMVar botExited
+  --takeMVar botExited
+
+  return ()

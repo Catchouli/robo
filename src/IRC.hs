@@ -29,7 +29,7 @@ data IRCConfig = IRCConfig
 defaultConfig :: IRCConfig
 defaultConfig = IRCConfig
   { _hostname = ""
-  , _port = PortNumber 0
+  , _port = PortNumber 6667
   , _nick = ""
   , _onConnect = \_ -> return ()
   , _onMessage = \_ _ _ _ -> return ()

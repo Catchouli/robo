@@ -24,3 +24,5 @@ executable robo
                      , http-conduit
                      , usb
                      , vector
+                     , transformers
+                     , mtl
