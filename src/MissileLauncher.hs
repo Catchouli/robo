@@ -13,17 +13,22 @@ import Text.Printf
 import Data.Vector ((!))
 import System.USB
 import Control.Concurrent
+import IRC
 
+-- The vendor ID of the launcher USB device
 vendorId :: Num a => a
 vendorId = 0x1130
 
+-- The product ID of the launcher USB device
 productId :: Num a => a
 productId = 0x0202
 
 
+-- A handle for the missile launcher
 data MissileLauncher = MissileLauncher { _ctx :: Ctx, _dev :: Device }
 
 
+-- Possible movement commands
 data MoveCommand = MoveNone
                  | MoveUp
                  | MoveDown
@@ -34,7 +39,11 @@ data MoveCommand = MoveNone
                  | MoveDownLeft
                  | MoveDownRight
 
+-- A type alias representing time in nanoseconds
+type TimeNanoseconds = Int
 
+
+-- Try connecting to a missile launcher, blocking if none was found
 newMissileLauncher :: Bool -> IO MissileLauncher
 newMissileLauncher debug = do
   ctx <- newCtx
@@ -42,8 +51,8 @@ newMissileLauncher debug = do
   dev <- waitFindDevice ctx vendorId productId
   return $ MissileLauncher ctx dev
 
-type TimeNanoseconds = Int
-
+-- Converts a move command to a 4-element mask (that's how the usb messages
+-- work, one byte per direction where 0 = no and 1 = yes)
 moveCommandToList MoveNone      = [0,0,0,0]
 moveCommandToList MoveUp        = [0,0,1,0]
 moveCommandToList MoveDown      = [0,0,0,1]
@@ -54,6 +63,7 @@ moveCommandToList MoveUpRight   = [0,1,1,0]
 moveCommandToList MoveDownLeft  = [1,0,0,1]
 moveCommandToList MoveDownRight = [0,1,0,1]
 
+-- Send a command to a missile launcher
 cmdMissileLauncher :: MissileLauncher -> MoveCommand -> Bool -> Maybe TimeNanoseconds -> IO ()
 cmdMissileLauncher (MissileLauncher ctx dev) moveCmd fire time = do
   withDeviceHandle dev $ \deviceHandle -> do

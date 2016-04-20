@@ -1,20 +1,56 @@
+{-# LANGUAGE TemplateHaskell, TypeFamilies, DeriveDataTypeable #-}
+
 module Main where
 
 import IRC
-import MissileLauncher
+import IRC.MissileHandler
 import Network
-import Control.Concurrent
-import Text.ParserCombinators.Parsec
-import Control.Concurrent
 
+import Text.ParserCombinators.Parsec
+
+import Control.Concurrent
 import Control.Monad.State
 import Control.Monad.Reader
 import Control.Monad.Writer
 import Control.Exception
 
 import Data.Typeable
-
 import Data.IORef
+import Data.Acid
+import Data.SafeCopy
+import qualified Data.Map as Map
+
+import Control.Monad.State
+import Control.Monad.Reader
+import System.Environment
+
+-- The quote database structure
+data QuoteDB = QuoteDB (Map.Map String String)
+  deriving (Show, Typeable)
+
+-- The acid state stuff for QuoteDB
+$(deriveSafeCopy 0 'base ''QuoteDB)
+updateQuoteDB :: Map.Map String String -> Update QuoteDB ()
+updateQuoteDB newValue = put (QuoteDB newValue)
+queryQuoteDB :: Query QuoteDB (Map.Map String String)
+queryQuoteDB = do QuoteDB quote <- ask
+                  return quote
+$(makeAcidic ''QuoteDB ['updateQuoteDB, 'queryQuoteDB])
+
+-- Add a quote to the specified quote db
+addQuote qdb key value = do
+  map <- query qdb QueryQuoteDB
+  update qdb $ UpdateQuoteDB (Map.insert key value map)
+
+-- Get a quote from the specifiec quote db
+getQuote qdb key = do
+  map <- query qdb QueryQuoteDB
+  return $ Map.lookup key map
+
+acid :: IO ()
+acid = do
+  acid <- openLocalState (QuoteDB (Map.empty))
+  return ()
 
 config :: IRCConfig
 config = defaultConfig
@@ -22,8 +58,9 @@ config = defaultConfig
   { _hostname = "uiharu.cat.bio"
   , _nick = "robo"
   , _backup = "robo2"
-  , _onConnect = onConnect
-  , _onMessage = onMessage
+  , _handlers = [ defaultHandler { _onConnect = onConnect }
+                , rocketHandler
+                ]
   }
 
 
@@ -32,37 +69,7 @@ onConnect conn = do
   sendCommand conn "JOIN #test"
 
 
-moveCmd "up"    = MoveUp
-moveCmd "down"  = MoveDown
-moveCmd "left"  = MoveLeft
-moveCmd "right" = MoveRight
-moveCmd _       = MoveNone
 
-
-simpleMissile moveCommand fire time = do
-  launcher <- newMissileLauncher False
-  cmdMissileLauncher launcher moveCommand fire time
-
-
-ifRight :: Monad m => Either a b -> (b -> m ()) -> m ()
-ifRight (Left _) _ = return ()
-ifRight (Right b) f = f b
-
-
-onMessage :: IRCConnection -> String -> String -> String -> IO ()
-onMessage conn chan nick msg = do
-  let mynick = _nick . _config $ conn
-
-  -- Handle missile actions
-  let action = choice $ string <$> ["left", "right", "up", "down", "fire"]
-      parser = do
-        string mynick >> space
-        command <- action
-        space
-        time <- optionMaybe . many1 $ digit
-        return (command, read <$> time)
-      result (action, time) = simpleMissile (moveCmd action) (action == "fire") time
-    in ifRight (parse parser "" msg) result
 
 
 bot :: IO ()
