@@ -18,9 +18,16 @@ import Data.IORef
 
 config :: IRCConfig
 config = defaultConfig
+<<<<<<< HEAD
   --{ _hostname = "192.168.0.77"
   { _hostname = "uiharu.cat.bio"
+=======
+  { _hostname = "192.168.0.77"
+  --{ _hostname = "uiharu.cat.bio"
+  , _port = PortNumber 6667
+>>>>>>> 878fbec2f8a7665a1c792f233b94348d753cb039
   , _nick = "robo"
+  , _backup = "robo2"
   , _onConnect = onConnect
   , _onMessage = onMessage
   }
@@ -28,7 +35,7 @@ config = defaultConfig
 
 onConnect :: IRCConnection -> IO ()
 onConnect conn = do
-  sendCommand conn "JOIN #rena"
+  sendCommand conn "JOIN #test"
 
 
 moveCmd "up"    = MoveUp
@@ -75,8 +82,8 @@ main = do
   --botExited <- newEmptyMVar :: IO (MVar ())
   --forkFinally bot (\_ -> putMVar botExited ())
   
-  --launcher <- newMissileLauncher False
-  --cmdMissileLauncher launcher MoveLeft False (Just 1000000)
+  --launcher <- newMissileLauncher True
+  --cmdMissileLauncher launcher MoveNone True Nothing--(Just 1000000)
 
   --takeMVar botExited
 

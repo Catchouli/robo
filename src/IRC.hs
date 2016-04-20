@@ -22,6 +22,7 @@ data IRCConfig = IRCConfig
   { _hostname :: String
   , _port :: PortID
   , _nick :: Nick
+  , _backup :: Nick
   , _onConnect :: (IRCConnection -> IO ())
   , _onMessage :: (IRCConnection -> Channel -> Nick -> Message -> IO ())
   }
@@ -31,6 +32,7 @@ defaultConfig = IRCConfig
   { _hostname = ""
   , _port = PortNumber 6667
   , _nick = ""
+  , _backup = ""
   , _onConnect = \_ -> return ()
   , _onMessage = \_ _ _ _ -> return ()
   }
@@ -67,7 +69,8 @@ processCommand conn s = do
     Right (Welcome host msg)                 -> (_onConnect . _config $ conn) conn
     Right (Ping host)                        -> sendCommand conn $ "PONG :" ++ host
     Right (Message chan (User nick _ _) msg) -> (_onMessage . _config $ conn) conn chan nick msg
-    _                                        -> printf "no parse for message\r\n"
+    Right (NickInUse)                        -> sendCommand conn $ "NICK " ++ (_backup . _config $ conn)
+    _                                        -> return () --printf "no parse for message\r\n"
   return ()
 
 sendCommand :: IRCConnection -> String -> IO ()

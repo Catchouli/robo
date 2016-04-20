@@ -23,6 +23,7 @@ data User = User Nick Username Hostname deriving Show
 data IRCMessage = Welcome String Message
                 | Ping Hostname
                 | Message Channel User Message
+                | NickInUse
                 deriving Show
 
 hostname = many (alphaNum <|> char '.')
@@ -41,6 +42,13 @@ parsePing = do
   server <- many anyToken
   return $ Ping server
 
+parseNickInUse = do
+  char ':'
+  host <- hostname
+  space
+  code <- string "433"
+  return NickInUse
+
 parsePrivmsg = do
   char ':'
   nick <- manyTill anyToken (char '!')
@@ -55,6 +63,7 @@ parsePrivmsg = do
 messageParser = try parseWelcome
             <|> try parsePing
             <|> try parsePrivmsg
+            <|> try parseNickInUse
 
 parseMessage :: String -> Either ParseError IRCMessage
 parseMessage s = parse messageParser "irc message" s

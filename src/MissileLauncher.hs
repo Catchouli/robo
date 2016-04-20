@@ -69,25 +69,32 @@ cmdMissileLauncher (MissileLauncher ctx dev) moveCmd fire time = do
         let controlSetup64 = ControlSetup Class
                                           ToInterface
                                           9 0x2 0x0
-
         -- Build command from options
         -- Command is 8 bytes in the form [0, L, R, U, D, F, 8, 8] where LRUD = directions and F = fire
         -- These bytes should be one or zero
         let command = 0 : moveCommandToList moveCmd ++ (if fire then [1] else [0]) ++ [8, 8]
 
         -- Fixed initiator packets
-        writeControl deviceHandle controlSetup8  (BS.pack ([85, 83, 66, 67, 0, 0, 4, 0])) 0
-        writeControl deviceHandle controlSetup8  (BS.pack ([85, 83, 66, 67, 0, 64, 2, 0])) 0
-        -- The control packet
-        (a, b) <- writeControl deviceHandle controlSetup64 (BS.pack (command ++ replicate 56 0)) 0
+        let header = do
+            writeControlExact deviceHandle controlSetup8  (BS.pack ([85, 83, 66, 67, 0, 0, 4, 0])) 0
+            writeControlExact deviceHandle controlSetup8  (BS.pack ([85, 83, 66, 67, 0, 64, 2, 0])) 0
+
+        let packetMove = do
+            header
+            -- The control packet
+            writeControlExact deviceHandle controlSetup64 (BS.pack (command ++ replicate 56 0)) 0
+
+        let packetStop = do
+            header
+            -- The stop packet
+            writeControlExact deviceHandle controlSetup64 (BS.pack ([0, 0, 0, 0, 0, 0, 8, 8] ++ replicate 56 0)) 0
+
+        packetMove
 
         case time of
           Just t -> do
             threadDelay t
-            -- The stop packet
-            writeControl deviceHandle controlSetup8  (BS.pack ([85, 83, 66, 67, 0, 0, 4, 0])) 0
-            writeControl deviceHandle controlSetup8  (BS.pack ([85, 83, 66, 67, 0, 64, 2, 0])) 0
-            writeControl deviceHandle controlSetup64 (BS.pack ([0, 0, 0, 0, 0, 0, 8, 8] ++ replicate 56 0)) 0
-          _      -> return (a, b)
+            packetStop
+          _      -> return ()
 
     return ()
