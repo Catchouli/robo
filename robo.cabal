@@ -26,3 +26,4 @@ executable robo
                      , vector
                      , transformers
                      , mtl
+                     , acid-state

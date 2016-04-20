@@ -18,14 +18,8 @@ import Data.IORef
 
 config :: IRCConfig
 config = defaultConfig
-<<<<<<< HEAD
   --{ _hostname = "192.168.0.77"
   { _hostname = "uiharu.cat.bio"
-=======
-  { _hostname = "192.168.0.77"
-  --{ _hostname = "uiharu.cat.bio"
-  , _port = PortNumber 6667
->>>>>>> 878fbec2f8a7665a1c792f233b94348d753cb039
   , _nick = "robo"
   , _backup = "robo2"
   , _onConnect = onConnect
