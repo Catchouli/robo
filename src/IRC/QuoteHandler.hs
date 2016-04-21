@@ -30,6 +30,11 @@ addQuote qdb key value = do
   map <- query qdb QueryQuoteDB
   update qdb $ UpdateQuoteDB (Map.insert key value map)
 
+-- Remove a quote from the specified quote db
+removeQuote qdb key = do
+  map <- query qdb QueryQuoteDB
+  update qdb $ UpdateQuoteDB (Map.delete key map)
+
 -- Get a quote from the specifiec quote db
 getQuote qdb key = do
   map <- query qdb QueryQuoteDB
@@ -50,6 +55,14 @@ onMessage conn chan nick msg = do
       result (key, value) = do
         acid <- openLocalState (QuoteDB (Map.empty))
         addQuote acid key value
+        closeAcidState acid
+    in ifRight (parse parser "" msg) result 
+
+  -- Listen for forget commands
+  let parser = string "!forget " >> (many . noneOf $ " \r\n")
+      result key = do
+        acid <- openLocalState (QuoteDB (Map.empty))
+        removeQuote acid key
         closeAcidState acid
     in ifRight (parse parser "" msg) result 
 

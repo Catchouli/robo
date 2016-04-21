@@ -9,8 +9,8 @@ import Control.Concurrent
 
 config :: IRCConfig
 config = defaultConfig
-  --{ _hostname = "192.168.0.77"
-  { _hostname = "uiharu.cat.bio"
+  { _hostname = "192.168.0.77"
+  --{ _hostname = "uiharu.cat.bio"
   , _nick = "robo"
   , _backup = "robo2"
   , _handlers = [ defaultHandler { _onConnect = onConnect }
@@ -21,7 +21,7 @@ config = defaultConfig
 
 onConnect :: IRCConnection -> IO ()
 onConnect conn = do
-  sendCommand conn "JOIN #test"
+  sendCommand conn "JOIN #dev"
 
 bot :: IO ()
 bot = do

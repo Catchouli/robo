@@ -4,6 +4,7 @@ module MissileLauncher
   , TimeNanoseconds
   , newMissileLauncher
   , cmdMissileLauncher
+  , repeatFor
   )
 where
 
@@ -50,6 +51,13 @@ newMissileLauncher debug = do
   if debug then setDebug ctx PrintDebug else return ()
   dev <- waitFindDevice ctx vendorId productId
   return $ MissileLauncher ctx dev
+
+-- Repeats an io action every `every' nanoseconds for a total of `time' time
+repeatFor time every act = do
+  let iterations = time `div` every
+      remainder = time `mod` every
+      times = replicate iterations every ++ [remainder]
+    in mapM_ (\t -> act >> threadDelay t) times
 
 -- Converts a move command to a 4-element mask (that's how the usb messages
 -- work, one byte per direction where 0 = no and 1 = yes)
@@ -100,11 +108,12 @@ cmdMissileLauncher (MissileLauncher ctx dev) moveCmd fire time = do
             writeControlExact deviceHandle controlSetup64 (BS.pack ([0, 0, 0, 0, 0, 0, 8, 8] ++ replicate 56 0)) 0
 
         packetMove
+        putStrLn "packetMove"
 
         case time of
           Just t -> do
-            threadDelay t
+            repeatFor ((min t 8000) * 1000) 500000 packetMove
             packetStop
-          _      -> return ()
+          _      -> packetMove >> packetStop
 
     return ()
