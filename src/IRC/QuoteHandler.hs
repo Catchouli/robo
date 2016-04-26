@@ -54,7 +54,24 @@ onMessage conn chan nick msg = do
                   return (key, value)
       result (key, value) = do
         acid <- openLocalState (QuoteDB (Map.empty))
-        addQuote acid key value
+        cur <- getQuote acid key
+        case cur of
+          Just _  -> sendMessage conn chan $ key ++ " already defined"
+          Nothing -> addQuote acid key value
+        closeAcidState acid
+    in ifRight (parse parser "" msg) result 
+
+  -- Listen for replace commands
+  let parser = do string "!replace" >> space
+                  key <- manyTill anyToken space
+                  value <- many anyToken
+                  return (key, value)
+      result (key, value) = do
+        acid <- openLocalState (QuoteDB (Map.empty))
+        cur <- getQuote acid key
+        case cur of
+          Just _  -> addQuote acid key value
+          Nothing -> sendMessage conn chan $ key ++ " is not defined"
         closeAcidState acid
     in ifRight (parse parser "" msg) result 
 
