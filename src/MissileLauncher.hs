@@ -94,18 +94,18 @@ cmdMissileLauncher (MissileLauncher ctx dev) moveCmd fire time = do
 
         -- Fixed initiator packets
         let header = do
-            writeControlExact deviceHandle controlSetup8  (BS.pack ([85, 83, 66, 67, 0, 0, 4, 0])) 0
-            writeControlExact deviceHandle controlSetup8  (BS.pack ([85, 83, 66, 67, 0, 64, 2, 0])) 0
+              writeControlExact deviceHandle controlSetup8  (BS.pack ([85, 83, 66, 67, 0, 0, 4, 0])) 0
+              writeControlExact deviceHandle controlSetup8  (BS.pack ([85, 83, 66, 67, 0, 64, 2, 0])) 0
 
         let packetMove = do
-            header
-            -- The control packet
-            writeControlExact deviceHandle controlSetup64 (BS.pack (command ++ replicate 56 0)) 0
+              header
+              -- The control packet
+              writeControlExact deviceHandle controlSetup64 (BS.pack (command ++ replicate 56 0)) 0
 
         let packetStop = do
-            header
-            -- The stop packet
-            writeControlExact deviceHandle controlSetup64 (BS.pack ([0, 0, 0, 0, 0, 0, 8, 8] ++ replicate 56 0)) 0
+              header
+              -- The stop packet
+              writeControlExact deviceHandle controlSetup64 (BS.pack ([0, 0, 0, 0, 0, 0, 8, 8] ++ replicate 56 0)) 0
 
         packetMove
         putStrLn "packetMove"

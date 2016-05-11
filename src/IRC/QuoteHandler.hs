@@ -25,6 +25,15 @@ queryQuoteDB = do QuoteDB quote <- ask
                   return quote
 $(makeAcidic ''QuoteDB ['updateQuoteDB, 'queryQuoteDB])
 
+---- The old version
+--data QuoteDB_old = QuoteDB_old (Map.Map String String)
+--  deriving (Show, Typeable)
+-- $(deriveSafeCopy 0 'base ''QuoteDB_old)
+--
+--instance Migrate QuoteDB where
+--  type MigrateFrom QuoteDB = QuoteDB_old
+--  migrate (QuoteDB_old map) = QuoteDB map []
+
 -- Add a quote to the specified quote db
 addQuote qdb key value = do
   map <- query qdb QueryQuoteDB

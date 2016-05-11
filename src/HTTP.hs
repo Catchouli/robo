@@ -4,6 +4,7 @@ module HTTP (unsafePerformHttp, unsafePerformAuthedHttp) where
 
 import Network.HTTP.Conduit
 import Network.Connection
+import Control.Exception
 import qualified Data.ByteString.Lazy.Char8 as LB
 import qualified Data.ByteString.Char8 as BS
 
@@ -28,11 +29,22 @@ simpleAuthedHttpWithManager manager url user pass = do url' <- parseUrl url
                                                        let request = applyBasicAuth (BS.pack user) (BS.pack pass) url'
                                                        fmap (LB.unpack . responseBody) $ httpLbs request manager
 
-unsafePerformHttp url = do
+--unsafePerformHttp :: String -> IO (Maybe String)
+--unsafePerformHttp url = do  res <- try $ unsafePerformHttp' url
+--                            case res of
+--                              Left _ -> return Nothing
+--                              Right a -> return . Just $ a
+                         
+unsafePerformHttp :: String -> IO (Maybe String)
+unsafePerformHttp url = return . Just $ catch (unsafePerformHttp' url) (\_ -> Nothing)
+                          
+                          
+
+unsafePerformHttp' url = do
   manager <- noSSLVerifyManager
   content <- simpleHttpWithManager manager url
   return content
 
 unsafePerformAuthedHttp url user pass = do
   manager <- noSSLVerifyManager
-  return $ simpleAuthedHttpWithManager manager url user pass
+  simpleAuthedHttpWithManager manager url user pass

@@ -29,3 +29,9 @@ executable robo
                      , acid-state
                      , safecopy
                      , containers
+                     , cond
+                     , curl
+                     , regex-compat
+                     , mueval
+                     , hint
+                     , connection
